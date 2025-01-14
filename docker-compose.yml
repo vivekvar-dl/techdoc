@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  worker:
+    build: .
+    command: rq worker --url redis://redis:6379
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+volumes:
+  redis_data: 
